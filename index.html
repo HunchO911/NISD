@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NISD – Nigeria Import Substitution Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div>
+      <div class="brand-name">NISD</div>
+      <div class="brand-sub">Import Substitution<br>Dashboard</div>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="Modules">
+    <a href="#overview" data-view="overview"><b>National Overview</b><small>Imports 2015–2025</small></a>
+    <a href="#ranker" data-view="ranker"><b>Opportunity Ranker</b><small>Feasibility scoring model</small></a>
+    <a href="#sim" data-view="sim"><b>Policy Simulation</b><small>Tariff and subsidy</small></a>
+  </nav>
+
+  <div class="side-foot">
+    <button id="themeBtn" class="ghost" type="button">Switch to light theme</button>
+    <p class="note"><b>Data status.</b> Import values, production gaps and technology readiness are from the project report. SE scores, tariff rates, elasticities, output ratios and employment multipliers are working placeholders.</p>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- ===================================================== OVERVIEW -->
+  <section id="view-overview" class="view">
+    <header class="page-head">
+      <h1>Nigeria Import Substitution Dashboard</h1>
+      <p>High-value import substitution opportunities, 2015–2025, across Machinery, Electrical, Pharmaceuticals and Processed Agro-Foods.</p>
+    </header>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Total imports, USD bn</h2><span class="sub">2025 is a projection</span></div>
+      <div id="chImports" class="chart"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-head"><h2>Imports by priority sector, USD bn</h2><span class="sub">stacked</span></div>
+        <div id="chSectors" class="chart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Manufacturing capacity utilisation, %</h2><span class="sub">annual</span></div>
+        <div id="chCapacity" class="chart"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Current top five targets</h2><span class="sub">default weights · <a href="#ranker">open the ranker</a></span></div>
+      <ol class="top5" id="top5"></ol>
+    </div>
+  </section>
+
+  <!-- ===================================================== RANKER -->
+  <section id="view-ranker" class="view">
+    <header class="page-head">
+      <h1>Opportunity Ranker</h1>
+      <p>Move a weight and every product is re-scored and re-ranked immediately. Tick 2–4 products to compare them.</p>
+    </header>
+
+    <div class="ranker-layout">
+      <aside class="controls panel" aria-label="Scoring weights">
+        <h2>Scoring weights</h2>
+        <div class="formula" id="formula"></div>
+
+        <div class="slider" data-k="IV">
+          <label for="w_IV"><span>Import value <em>IV</em></span><output id="o_IV"></output></label>
+          <input type="range" id="w_IV" min="0" max="100" step="1" value="35">
+        </div>
+        <div class="slider" data-k="PG">
+          <label for="w_PG"><span>Production gap <em>PG</em></span><output id="o_PG"></output></label>
+          <input type="range" id="w_PG" min="0" max="100" step="1" value="30">
+        </div>
+        <div class="slider" data-k="TR">
+          <label for="w_TR"><span>Technology readiness <em>TR</em></span><output id="o_TR"></output></label>
+          <input type="range" id="w_TR" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="slider" data-k="SE">
+          <label for="w_SE"><span>Strategic economic score <em>SE</em></span><output id="o_SE"></output></label>
+          <input type="range" id="w_SE" min="0" max="100" step="1" value="15">
+        </div>
+        <p class="hint">Sliders are relative. Weights are rescaled to sum to 100%, so the percentages shown are what the model uses.</p>
+
+        <div class="presets">
+          <button type="button" data-preset="default" class="ghost">Default</button>
+          <button type="button" data-preset="equal" class="ghost">Equal</button>
+          <button type="button" data-preset="value" class="ghost">Value-led</button>
+          <button type="button" data-preset="ready" class="ghost">Readiness-led</button>
+        </div>
+
+        <h3>Import value scaling</h3>
+        <div class="seg" role="group" aria-label="Import value scaling">
+          <button type="button" data-iv="log" class="on">Logarithmic</button>
+          <button type="button" data-iv="linear">Linear</button>
+        </div>
+
+        <h3>Sector</h3>
+        <select id="sectorFilter" aria-label="Filter by sector"></select>
+      </aside>
+
+      <div class="ranker-main">
+        <div class="panel tight">
+          <div class="panel-head">
+            <h2 id="tblTitle">Ranking</h2>
+            <span class="sub" id="tblSub"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="rank" id="rankTable">
+              <thead>
+                <tr>
+                  <th class="c-sel"><span class="sr">Compare</span></th>
+                  <th data-sort="rank" class="c-rank">#</th>
+                  <th data-sort="description">Product</th>
+                  <th data-sort="avg_import_usd_mn" class="num">Imports<br><small>USD mn</small></th>
+                  <th data-sort="prod_gap_pct" class="num">Gap<br><small>%</small></th>
+                  <th data-sort="IV" class="num">IV</th>
+                  <th data-sort="PG" class="num">PG</th>
+                  <th data-sort="TR" class="num">TR</th>
+                  <th data-sort="SE" class="num">SE</th>
+                  <th data-sort="SOS" class="c-sos">SOS <small>0–10</small></th>
+                  <th data-sort="delta" class="num">Move</th>
+                </tr>
+              </thead>
+              <tbody id="rankBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="comparePanel">
+          <div class="panel-head"><h2>Compare products</h2><span class="sub" id="cmpSub"></span></div>
+          <div class="compare">
+            <div id="chRadar" class="radar"></div>
+            <div id="cmpTable" class="cmp-table"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== SIMULATION -->
+  <section id="view-sim" class="view">
+    <header class="page-head">
+      <h1>Policy Simulation</h1>
+      <p>Test a tariff increase and an investment subsidy on one product and read the five-year effect on imports, foreign exchange and jobs.</p>
+    </header>
+
+    <div class="ranker-layout">
+      <aside class="controls panel" aria-label="Policy levers">
+        <h2>Policy levers</h2>
+
+        <label class="lbl" for="simProduct">Product</label>
+        <select id="simProduct"></select>
+        <p class="baseline" id="simBase"></p>
+
+        <div class="slider">
+          <label for="simTariff"><span>Tariff increase</span><output id="o_simTariff"></output></label>
+          <input type="range" id="simTariff" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="slider">
+          <label for="simSubsidy"><span>Investment subsidy</span><output id="o_simSubsidy"></output></label>
+          <input type="range" id="simSubsidy" min="0" max="1000" step="10" value="200">
+        </div>
+
+        <label class="lbl" for="simFx">Exchange rate (NGN per USD)</label>
+        <input type="number" id="simFx" min="1" step="10">
+
+        <details class="adv">
+          <summary>Model assumptions</summary>
+          <label class="lbl" for="simEl">Import price elasticity</label>
+          <input type="number" id="simEl" step="0.05">
+          <label class="lbl" for="simOr">Annual output per USD invested, at capacity</label>
+          <input type="number" id="simOr" step="0.1">
+          <label class="lbl" for="simEm">Direct jobs per USD 1 mn of output</label>
+          <input type="number" id="simEm" step="1">
+        </details>
+
+        <div class="btn-row">
+          <button type="button" id="simSave" class="solid">Save as scenario</button>
+          <button type="button" id="simClear" class="ghost">Clear</button>
+          <button type="button" id="simCsv" class="ghost">Download CSV</button>
+        </div>
+      </aside>
+
+      <div class="ranker-main">
+        <div class="kpis kpis4" id="simKpis"></div>
+        <div class="grid2">
+          <div class="panel"><div class="panel-head"><h2>Foreign-exchange savings, USD mn</h2></div><div id="chFx" class="chart"></div></div>
+          <div class="panel"><div class="panel-head"><h2>Jobs created</h2></div><div id="chJobs" class="chart"></div></div>
+        </div>
+        <div class="panel tight">
+          <div class="panel-head"><h2>Year-by-year projection</h2><span class="sub">USD mn unless stated</span></div>
+          <div class="table-wrap"><table class="plain" id="simTable"></table></div>
+        </div>
+        <div class="panel tight">
+          <div class="panel-head"><h2>Saved scenarios</h2><span class="sub">year-5 values</span></div>
+          <div class="table-wrap"><table class="plain" id="scnTable"></table></div>
+        </div>
+        <details class="method">
+          <summary>How the simulation works</summary>
+          <p>A tariff rise of <i>dt</i> points changes the landed price by <i>dt / (100 + t₀)</i>. Import demand falls by |elasticity| times that change, half in year 1 and fully afterwards. The subsidy, converted to USD, buys annual domestic output at the stated output ratio, phased in at 20%, 50%, 80% and 100% over years 1 to 4. Each USD of new output displaces one USD of imports, and total displacement never exceeds the product's imports. Jobs are direct (output displaced × employment multiplier) plus indirect at 1.5 × direct.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
